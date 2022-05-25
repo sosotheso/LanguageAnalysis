@@ -13,9 +13,15 @@ import pandas as pnd
 # print(qResult, "\n")
 # print(qResult['article_count'][0])
 
-df = pnd.DataFrame(columns=['A', 'B'])
+# df = pnd.DataFrame(columns=['A', 'B'])
+#
+# for i in range(5):
+#     df = pnd.append({'A': i, 'B': i+1}, ignore_index=True)
+#
+# print(df)
 
-for i in range(5):
-    df = pnd.append({'A': i, 'B': i+1}, ignore_index=True)
+import statistics
 
-print(df)
+student_ages = [9, 10, 9, 10, 9, 9, 10, 11, 11, 10, 9, 9]
+median_age = statistics.median(student_ages)
+print(median_age)

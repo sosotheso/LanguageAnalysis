@@ -1,7 +1,7 @@
 import pandas as pnd
 from pandasql import sqldf
 
-df = pnd.read_excel('D:\MIRELA\MainFile.xlsx', sheet_name='Tabelle1')
+df_excel_source = pnd.read_excel('D:\MIRELA\MainFile.xlsx', sheet_name='Tabelle1')
 pysqldf = lambda q: sqldf(q, globals())
 
 
