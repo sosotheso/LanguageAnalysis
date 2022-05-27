@@ -14,10 +14,6 @@ q="SELECT df_excel_source.'Age', (cast (Count(*) as float) * 100 / cast((select 
 qResult = pysqldf(q)
 print(qResult, "\n")
 
-# d1 = pnd.DataFrame(qResult)
-# with pnd.ExcelWriter(r'D:\MIRELA\results\result.xlsx', if_sheet_exists="overlay", engine="openpyxl", mode="a",
-#                      engine_kwargs={"keep_vba": True}) as writer:
-#     d1.to_excel(writer, sheet_name="result", index=False)
 
 # Number of participants by year of study
 q = "SELECT df_excel_source.'Year Of Study', (cast (Count(*) as float) * 100 / cast((select count(*) from df_excel_source WHERE df_excel_source.'Additional Notes'!='EXCLUDED' or df_excel_source.'Additional Notes' IS NULL )as float) ) as Participants_Count " \
