@@ -134,4 +134,3 @@ def stat_age():
     print(qResult, "\n")
 
 
-stat_year_of_study()
