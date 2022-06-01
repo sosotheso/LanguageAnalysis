@@ -1,5 +1,6 @@
 import pandas as pnd
 from pandasql import sqldf
+from scipy import stats
 
 df_excel_source = pnd.read_excel('D:\MIRELA\MainFile.xlsx', sheet_name='Tabelle2')
 pysqldf = lambda q: sqldf(q, globals())
@@ -18,7 +19,7 @@ def stat_tabelle2():
     i = 0
     for qst in Question_no:
         for art in Article:
-            # Number of participants by age
+            # Number of article by question
             q = "SELECT Count(*) as article_count " \
                 "FROM df_excel_source " \
                 "WHERE df_excel_source.{0} = '{1}';"
@@ -39,32 +40,65 @@ def stat_definite_specific():
     df_result = pnd.DataFrame(columns=['category', 'the', 'a', 'zero article'])
     df_source = stat_tabelle2().head(48)
     category = ['+definite +specific', '+definite -specific', '-definite +specific', '-definite -specific']
-    i = 1
+    i = 0
     j = 0
     for c in category:
-        list_question = ['FCET' + str(i), 'FCET' + str(i + 1), 'FCET' + str(i + 2), 'FCET' + str(i + 3)]
-        i = i + 4
-        df_temp = df_source[df_source['Article'] == 'a']
-        df_temp = df_temp[
-            (df_temp['Question_no'] == list_question[0]) | (df_temp['Question_no'] == list_question[1]) | (
-                    df_temp['Question_no'] == list_question[2]) | (df_temp['Question_no'] == list_question[3])]
-        # print(df_temp)
-        df_temp2 = df_source[df_source['Article'] == 'the']
-        df_temp2 = df_temp2[
-            (df_temp2['Question_no'] == list_question[0]) | (df_temp2['Question_no'] == list_question[1]) | (
-                    df_temp2['Question_no'] == list_question[2]) | (df_temp2['Question_no'] == list_question[3])]
-        # print(df_temp2)
-        df_temp3 = df_source[df_source['Article'] == 'zero article']
-        df_temp3 = df_temp3[
-            (df_temp3['Question_no'] == list_question[0]) | (df_temp3['Question_no'] == list_question[1]) | (
-                    df_temp3['Question_no'] == list_question[2]) | (df_temp3['Question_no'] == list_question[3])]
+        df_temp = df_source[df_source['Article'] == 'a'].iloc[i:i + 4]
+        print(df_temp)
+        df_temp2 = df_source[df_source['Article'] == 'the'].iloc[i:i + 4]
+        print(df_temp2)
+        df_temp3 = df_source[df_source['Article'] == 'zero article'].iloc[i:i + 4]
+        print(df_temp3)
         df_result = pnd.concat([df_result, pnd.DataFrame({'category': c,
                                                           'the': df_temp2['percentage'].sum() / 4,
                                                           'a': df_temp['percentage'].sum() / 4,
                                                           'zero article': df_temp3['percentage'].sum() / 4},
                                                          index=[j])])
         j = j + 1
+        i = i + 4
     return df_result
+
+
+# paired two tailed t test for means (definite + specific versus definite -specific)
+#                                    (indefinite +specific versus indefinite -specific)
+
+
+# def t_test_specificity():
+
+
+
+
+    # df_result = pnd.DataFrame(columns=['category', 'the', 'a'])
+    # df_source = stat_tabelle2().head(48)
+    # category = ['+definite', 'indefinite']
+    # i = 0
+    # j = 0
+    # for c in category:
+    #     v1_a = df_source[df_source['Article'] == 'a'].iloc[i:i + 4]
+    #     # print(v1_a)
+    #     v2_a = df_source[df_source['Article'] == 'a'].iloc[i + 4:i + 8]
+    #     # print(v2_a)
+    #     v1_the = df_source[df_source['Article'] == 'the'].iloc[i:i + 4]
+    #     # print(v1_the)
+    #     v2_the = df_source[df_source['Article'] == 'the'].iloc[i + 4:i + 8]
+    #     # print(v2_the)
+    #     i = i + 8
+    #     t_test_a = stats.ttest_rel(v1_a['frequency'].to_numpy(), v2_a['frequency'].to_numpy(), alternative='two-sided')
+    #     t_test_the = stats.ttest_rel(v1_the['frequency'].to_numpy(), v2_the['frequency'].to_numpy(),
+    #                                  alternative='two-sided')
+    #
+    #     print('t test a', t_test_a)
+    #
+    #     print(t_test_the)
+    #     df_result = pnd.concat([df_result, pnd.DataFrame({'category': c,
+    #                                                       'the': t_test_the[1],
+    #                                                       'a': t_test_a[1]},
+    #                                                      index=[j])])
+    #     j = j + 1
+    #
+    # return df_result
+    #
+
 
 
 print(stat_definite_specific())
