@@ -1,6 +1,8 @@
 import pandas as pnd
 from pandasql import sqldf
 from scipy import stats
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
 
 df_excel_source = pnd.read_excel('D:\MIRELA\MainFile.xlsx', sheet_name='Tabelle2')
 pysqldf = lambda q: sqldf(q, globals())
@@ -10,6 +12,7 @@ Question_no = ['FCET1', 'FCET2', 'FCET3', 'FCET4', 'FCET5', 'FCET6', 'FCET7', 'F
                'FCET20', 'FCET21', 'FCET22', 'FCET23', 'FCET24']
 
 Article = ['a', 'the', 'zero article']
+sub_article = ['a', 'the']
 
 
 # return dataframe: Article, frequency, percentage for each Question_no
@@ -61,44 +64,59 @@ def stat_definite_specific():
 
 # paired two tailed t test for means (definite + specific versus definite -specific)
 #                                    (indefinite +specific versus indefinite -specific)
+def t_test_specificity():
+    for art in Article:
+        print('Paired t-test for ', art, '\n')
+        df_test = (df_excel_source.iloc[:, 0:17]).replace(art, 1)
+        df_test.iloc[:, 1:] = (df_test.iloc[:, 1:]).replace(to_replace=r'.*', value=0, regex=True)
+        # print(df_test)
+        df_temp = pnd.DataFrame(columns=['Participant', '+d+s', '+d-s', '-d+s', '-d-s'])
+        df_temp['Participant'] = df_test['Participant No.']
+        df_temp['+d+s'] = df_test.iloc[:, 1:5].sum(axis=1)
+        df_temp['+d-s'] = df_test.iloc[:, 5:9].sum(axis=1)
+        df_temp['-d+s'] = df_test.iloc[:, 9:13].sum(axis=1)
+        df_temp['-d-s'] = df_test.iloc[:, 13:17].sum(axis=1)
+
+        t_test_the_d = stats.ttest_rel(df_temp['+d+s'].to_numpy(), df_temp['+d-s'].to_numpy(), alternative='two-sided')
+        print('Definite context : -specific vs +specific : ', t_test_the_d)
+
+        t_test_the_ind = stats.ttest_rel(df_temp['-d+s'].to_numpy(), df_temp['-d-s'].to_numpy(),
+                                         alternative='two-sided')
+        print('InDefinite context : -specific vs +specific : ', t_test_the_ind, '\n')
 
 
-# def t_test_specificity():
+def anova():
+    for art in sub_article:
+        print('ANOVA test for ', art, '\n')
+        df_test = (df_excel_source.iloc[:, 0:17]).replace(art, 1)
+        df_test.iloc[:, 1:] = (df_test.iloc[:, 1:]).replace(to_replace=r'.*', value=0, regex=True)
+        df_temp = pnd.DataFrame(columns=['Participant', '+d+s', '+d-s', '-d+s', '-d-s'])
+        df_temp['Participant'] = df_test['Participant No.']
+        df_temp['+d+s'] = df_test.iloc[:, 1:5].sum(axis=1)
+        df_temp['+d-s'] = df_test.iloc[:, 5:9].sum(axis=1)
+        df_temp['-d+s'] = df_test.iloc[:, 9:13].sum(axis=1)
+        df_temp['-d-s'] = df_test.iloc[:, 13:17].sum(axis=1)
+        # print(df_temp)
+        # create dataframe : ANOVA test input--------------------------------------------------------------
+        df_temp2 = pnd.DataFrame(columns=['Participant', 'definiteness', 'specificity', art])
+        l = len(df_temp.iloc[:, 0:1])
+        for i in range(0, l):
+            for j in range(1, 5):
+                df_temp2 = pnd.concat([df_temp2, pnd.DataFrame({'Participant': df_temp['Participant'].iloc[i],
+                                                                'definiteness': (df_temp.columns[j])[0:2],
+                                                                'specificity': (df_temp.columns[j])[2:4],
+                                                                art: (df_temp[df_temp.columns[j]]).iloc[i]},
+                                                               index=[j + i * 4])])
+        df_temp2 = df_temp2.iloc[:, 1:]
+        df_temp2[art] = pnd.to_numeric(df_temp2[art])
+        # print(df_temp2)
+        # ------------------------------------------------------------------------------------------------
+        print('ANOVA test for specificity * definiteness \n')
+        # perform two-way ANOVA
+
+        model = ols(art+' ~ C(definiteness) + C(specificity) + C(definiteness):C(specificity)', data=df_temp2).fit()
+        print(sm.stats.anova_lm(model, typ=2))
+        # print(type((df_temp2[art]).iloc[0]))
 
 
-
-
-    # df_result = pnd.DataFrame(columns=['category', 'the', 'a'])
-    # df_source = stat_tabelle2().head(48)
-    # category = ['+definite', 'indefinite']
-    # i = 0
-    # j = 0
-    # for c in category:
-    #     v1_a = df_source[df_source['Article'] == 'a'].iloc[i:i + 4]
-    #     # print(v1_a)
-    #     v2_a = df_source[df_source['Article'] == 'a'].iloc[i + 4:i + 8]
-    #     # print(v2_a)
-    #     v1_the = df_source[df_source['Article'] == 'the'].iloc[i:i + 4]
-    #     # print(v1_the)
-    #     v2_the = df_source[df_source['Article'] == 'the'].iloc[i + 4:i + 8]
-    #     # print(v2_the)
-    #     i = i + 8
-    #     t_test_a = stats.ttest_rel(v1_a['frequency'].to_numpy(), v2_a['frequency'].to_numpy(), alternative='two-sided')
-    #     t_test_the = stats.ttest_rel(v1_the['frequency'].to_numpy(), v2_the['frequency'].to_numpy(),
-    #                                  alternative='two-sided')
-    #
-    #     print('t test a', t_test_a)
-    #
-    #     print(t_test_the)
-    #     df_result = pnd.concat([df_result, pnd.DataFrame({'category': c,
-    #                                                       'the': t_test_the[1],
-    #                                                       'a': t_test_a[1]},
-    #                                                      index=[j])])
-    #     j = j + 1
-    #
-    # return df_result
-    #
-
-
-
-print(stat_definite_specific())
+anova()
