@@ -1,7 +1,7 @@
 import pandas as pnd
+import statsmodels.api as sm
 from pandasql import sqldf
 from scipy import stats
-import statsmodels.api as sm
 from statsmodels.formula.api import ols
 
 df_excel_source = pnd.read_excel('D:\MIRELA\MainFile.xlsx', sheet_name='Tabelle2')
@@ -114,9 +114,68 @@ def anova():
         print('ANOVA test for specificity * definiteness \n')
         # perform two-way ANOVA
 
-        model = ols(art+' ~ C(definiteness) + C(specificity) + C(definiteness):C(specificity)', data=df_temp2).fit()
+        model = ols(art + ' ~ C(definiteness) + C(specificity) + C(definiteness):C(specificity)', data=df_temp2).fit()
         print(sm.stats.anova_lm(model, typ=2))
         # print(type((df_temp2[art]).iloc[0]))
 
 
-anova()
+# statistics for : +d+s previous mention definites (simple definite , q17-q20) , -d-s first mention indefinite (simple indefinite) q21-q24
+def stat_def_indef():
+    df_result = pnd.DataFrame(columns=['category', 'the', 'a', 'zero article'])
+    df_source = stat_tabelle2().iloc[48:, :]
+    # print(df_source)
+    category = ['+definite +specific simple definite ', '-definite -specific simple indefinite']
+    i = 0
+    j = 0
+    for c in category:
+        df_temp = df_source[df_source['Article'] == 'a'].iloc[i:i + 4]
+        # print(df_temp)
+        df_temp2 = df_source[df_source['Article'] == 'the'].iloc[i:i + 4]
+        # print(df_temp2)
+        df_temp3 = df_source[df_source['Article'] == 'zero article'].iloc[i:i + 4]
+        # print(df_temp3)
+        df_result = pnd.concat([df_result, pnd.DataFrame({'category': c,
+                                                          'the': df_temp2['percentage'].sum() / 4,
+                                                          'a': df_temp['percentage'].sum() / 4,
+                                                          'zero article': df_temp3['percentage'].sum() / 4},
+                                                         index=[j])])
+        j = j + 1
+        i = i + 4
+    return df_result
+
+
+# paired two tailed t test for means (+definite + specific: simple definite versus obligatory definite)
+#                                    (-definite -specific: simple indefinite versus obligatory indefinite )
+def t_test_definiteness_type():
+    for art in Article:
+        print('Paired t-test for ', art, '\n')
+        df_test = pnd.concat(
+            [
+                (df_excel_source.iloc[:, 0:5]).replace(art, 1), (df_excel_source.iloc[:, 13:17]).replace(art, 1),
+                (df_excel_source.iloc[:, 17:25]).replace(art, 1)
+            ], axis=1
+        )
+        df_test.iloc[:, 1:] = (df_test.iloc[:, 1:]).replace(to_replace=r'.*', value=0, regex=True)
+        # print(df_test)
+
+        df_temp = pnd.DataFrame(
+            columns=['Participant', '+d+s obligatory', '-d-s obligatory', '+d+s simple', '-d-s simple'])
+        df_temp['Participant'] = df_test['Participant No.']
+        df_temp['+d+s obligatory'] = df_test.iloc[:, 1:5].sum(axis=1)
+        df_temp['-d-s obligatory'] = df_test.iloc[:, 5:9].sum(axis=1)
+        df_temp['+d+s simple'] = df_test.iloc[:, 9:13].sum(axis=1)
+        df_temp['-d-s simple'] = df_test.iloc[:, 13:17].sum(axis=1)
+        # print(df_temp)
+        t_test_the_d = stats.ttest_rel(df_temp['+d+s obligatory'].to_numpy(), df_temp['+d+s simple'].to_numpy(),
+                                       alternative='two-sided')
+        print('Definite context : obligatory definite vs simple definite : ', t_test_the_d)
+        # #
+        t_test_the_ind = stats.ttest_rel(df_temp['-d-s obligatory'].to_numpy(), df_temp['-d-s simple'].to_numpy(),
+                                         alternative='two-sided')
+        print('InDefinite context : obligatory indefinite vs simple indefinite : ', t_test_the_ind, '\n')
+
+
+
+print(stat_def_indef())
+print('\n\n')
+t_test_definiteness_type()
