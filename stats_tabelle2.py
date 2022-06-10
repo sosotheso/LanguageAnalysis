@@ -158,6 +158,7 @@ def t_test_definiteness_type():
         )
         df_test.iloc[:, 1:] = (df_test.iloc[:, 1:]).replace(to_replace=r'.*', value=0, regex=True)
         # print(df_test)
+        # test
 
         df_temp = pnd.DataFrame(
             columns=['Participant', '+d+s obligatory', '-d-s obligatory', '+d+s simple', '-d-s simple'])
