@@ -119,7 +119,8 @@ def anova():
         # print(type((df_temp2[art]).iloc[0]))
 
 
-# statistics for : +d+s previous mention definites (simple definite , q17-q20) , -d-s first mention indefinite (simple indefinite) q21-q24
+# statistics for : +d+s previous mention definite (simple definite , q17-q20) ,
+#                  -d-s first mention indefinite (simple indefinite) q21-q24
 def stat_def_indef():
     df_result = pnd.DataFrame(columns=['category', 'the', 'a', 'zero article'])
     df_source = stat_tabelle2().iloc[48:, :]
@@ -173,7 +174,6 @@ def t_test_definiteness_type():
         t_test_the_ind = stats.ttest_rel(df_temp['-d-s obligatory'].to_numpy(), df_temp['-d-s simple'].to_numpy(),
                                          alternative='two-sided')
         print('InDefinite context : obligatory indefinite vs simple indefinite : ', t_test_the_ind, '\n')
-
 
 
 print(stat_def_indef())
