@@ -6,6 +6,8 @@ from pandasql import sqldf
 # Import Excel Data to a dataframe
 df_excel_source = pnd.read_excel(r'D:\MIRELA\MainFile.xlsx', sheet_name='Tabelle1')
 
+
+
 # Filter Excluded rows
 df_excel_source = df_excel_source[df_excel_source['Additional Notes'] != 'EXCLUDED']
 
@@ -134,3 +136,5 @@ def stat_age():
     print(qResult, "\n")
 
 
+
+stat_age_english()

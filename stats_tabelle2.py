@@ -1,8 +1,8 @@
+import pandas as pd
 import pandas as pnd
-import statsmodels.api as sm
 from pandasql import sqldf
 from scipy import stats
-from statsmodels.formula.api import ols
+from statsmodels.stats.anova import AnovaRM
 
 df_excel_source = pnd.read_excel('D:\MIRELA\MainFile.xlsx', sheet_name='Tabelle2')
 pysqldf = lambda q: sqldf(q, globals())
@@ -85,7 +85,8 @@ def t_test_specificity():
         print('InDefinite context : -specific vs +specific : ', t_test_the_ind, '\n')
 
 
-def anova():
+def anova_new():
+    result = list()
     for art in sub_article:
         print('ANOVA test for ', art, '\n')
         df_test = (df_excel_source.iloc[:, 0:17]).replace(art, 1)
@@ -107,16 +108,20 @@ def anova():
                                                                 'specificity': (df_temp.columns[j])[2:4],
                                                                 art: (df_temp[df_temp.columns[j]]).iloc[i]},
                                                                index=[j + i * 4])])
-        df_temp2 = df_temp2.iloc[:, 1:]
+
         df_temp2[art] = pnd.to_numeric(df_temp2[art])
-        # print(df_temp2)
+        print(df_temp2)
         # ------------------------------------------------------------------------------------------------
         print('ANOVA test for specificity * definiteness \n')
-        # perform two-way ANOVA
+        # perform repeated two-way ANOVA
 
-        model = ols(art + ' ~ C(definiteness) + C(specificity) + C(definiteness):C(specificity)', data=df_temp2).fit()
-        print(sm.stats.anova_lm(model, typ=2))
-        # print(type((df_temp2[art]).iloc[0]))
+        # model = ols(art + ' ~ C(definiteness) + C(specificity) + C(definiteness):C(specificity)', data=df_temp2).fit()
+        # print(sm.stats.anova_lm(model, typ=2))
+
+        model = AnovaRM(df_temp2, art, 'Participant', within=['definiteness', 'specificity'])
+        res2way = model.fit()
+        result.append(res2way)
+    return result
 
 
 # statistics for : +d+s previous mention definite (simple definite , q17-q20) ,
@@ -177,6 +182,65 @@ def t_test_definiteness_type():
         print('InDefinite context : obligatory indefinite vs simple indefinite : ', t_test_the_ind, '\n')
 
 
-print(stat_def_indef())
-print('\n\n')
-t_test_definiteness_type()
+# we are expecting at least a score of 2/4 for each participant for each category question
+# (example : q1 q2 q3 q4 , expectation of at least  2/4 correct answers)
+#
+def percentage_correct_answer_by_category():
+    df_temp = pnd.DataFrame(columns=['Participant', '+d+s', '+d-s', '-d+s', '-d-s', 'q17q20', 'q21q24'])
+    # +D+S +D-S processing
+    df_test = (df_excel_source.iloc[:, 0:9]).replace('the', 1)
+    df_test.iloc[:, 1:] = (df_test.iloc[:, 1:]).replace(to_replace=r'.*', value=0, regex=True)
+    # print(df_test)
+    df_temp['Participant'] = df_test['Participant No.']
+    df_temp['+d+s'] = df_test.iloc[:, 1:5].sum(axis=1)
+
+    df_temp['+d-s'] = df_test.iloc[:, 5:9].sum(axis=1)
+    print(type(df_temp['+d+s']))
+    # print(df_temp)
+
+    df_temp['+d+s'] = df_temp['+d+s'].map(lambda x: 1 if x > 1 else 0)
+    df_temp['+d-s'] = df_temp['+d-s'].map(lambda x: 1 if x > 1 else 0)
+    # print(df_temp)
+
+    # -D+S -D-S processing
+    df_test = (df_excel_source.iloc[:, 9:17]).replace('a', 1)
+    df_test.iloc[:, 0:] = (df_test.iloc[:, 0:]).replace(to_replace=r'.*', value=0, regex=True)
+    # print(df_test)
+    df_temp['-d+s'] = df_test.iloc[:, 0:4].sum(axis=1)
+
+    df_temp['-d-s'] = df_test.iloc[:, 4:8].sum(axis=1)
+
+    df_temp['-d+s'] = df_temp['-d+s'].map(lambda x: 1 if x > 1 else 0)
+    df_temp['-d-s'] = df_temp['-d-s'].map(lambda x: 1 if x > 1 else 0)
+    # print(df_temp)
+
+    # Processing q17q20
+    df_test = (df_excel_source.iloc[:, 17:21]).replace('the', 1)
+    df_test.iloc[:, 0:] = (df_test.iloc[:, 0:]).replace(to_replace=r'.*', value=0, regex=True)
+    # print(df_test)
+    df_temp['q17q20'] = df_test.iloc[:, 0:4].sum(axis=1)
+    df_temp['q17q20'] = df_temp['q17q20'].map(lambda x: 1 if x > 1 else 0)
+    # print(df_temp)
+
+    # Processing q21q24
+    df_test = (df_excel_source.iloc[:, 21:25]).replace('a', 1)
+    df_test.iloc[:, 0:] = (df_test.iloc[:, 0:]).replace(to_replace=r'.*', value=0, regex=True)
+    # print(df_test)
+    df_temp['q21q24'] = df_test.iloc[:, 0:4].sum(axis=1)
+    df_temp['q21q24'] = df_temp['q21q24'].map(lambda x: 1 if x > 1 else 0)
+    # print(df_temp)
+    # print(df_excel_source)
+
+    # Calculate result
+    df_res = pnd.DataFrame(columns=['+d+s', '+d-s', '-d+s', '-d-s', 'q17q20', 'q21q24'])
+    df_res['+d+s'] = pd.Series([df_temp['+d+s'].sum() / 133 * 100])
+    df_res['+d-s'] = pd.Series([df_temp['+d-s'].sum() / 133 * 100])
+    df_res['-d+s'] = pd.Series([df_temp['-d+s'].sum() / 133 * 100])
+    df_res['-d-s'] = pd.Series([df_temp['-d-s'].sum() / 133 * 100])
+    df_res['q17q20'] = pd.Series([df_temp['q17q20'].sum() / 133 * 100])
+    df_res['q21q24'] = pd.Series([df_temp['q21q24'].sum() / 133 * 100])
+
+    return df_res
+
+
+print (percentage_correct_answer_by_category())
